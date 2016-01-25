@@ -1,5 +1,4 @@
 var assert = require('assert');
-var buffer = require('buffer');
 
 /*
   Usage:
@@ -10,7 +9,7 @@ var buffer = require('buffer');
 
 var Writer = function(buf) {
   if (typeof buf == 'undefined') {
-    buf = new buffer.Buffer(1024);
+    buf = new Buffer(1024);
   }
   this.buf = buf;
   this.offset = 0;
@@ -22,8 +21,8 @@ Writer.prototype.getBuffer = function() {
 
 Writer.prototype.ensureBuf = function(needBytes) {
   if (this.buf.length <= this.offset + needBytes) {
-    var newBuf = new buffer.Buffer(this.buf.length + 1024);
-    this.buf = Buffer.concat(this.buf, newBuf);
+    var newBuf = new Buffer(this.buf.length + 1024);
+    this.buf = Buffer.concat([this.buf, newBuf]);
   }
 }
 
@@ -77,7 +76,7 @@ Writer.prototype.writeUint64 = function(v) {
   this.offset += 8;
 }
 
-function uvarIntSize(i) {
+function uvarintSize(i) {
   verifuint(i, 0x001FFFFFFFFFFFFf);
   return i < 0x100 ? 1
     : i < 0x0000000000010000 ? 2
@@ -94,7 +93,7 @@ Writer.prototype.writeVarint = function(v) {
 }
 
 Writer.prototype.writeUvarint = function(v) {
-  var vLen = uvarIntSize(v);
+  var vLen = uvarintSize(v);
   this.writeUint8(vLen);
   var bytes = [];
   for (var i = 0; i < vLen; i++) {
@@ -107,33 +106,18 @@ Writer.prototype.writeUvarint = function(v) {
   }
 }
 
-function utf8ToBytes(str) {
-  var bytes = [];
-  for (var i = 0; i < str.length; i++) {
-    var b = str.charCodeAt(i);
-    if (b <= 0x7F) {
-      bytes.push(b);
-    } else {
-      var start = i;
-      if (b >= 0xD800 && b <= 0xDFFF) {
-        i++;
-      }
-      var h = encodeURIComponent(str.slice(start, i + 1)).substr(1).split('%');
-      for (var j = 0; j < h.length; j++) {
-        bytes.push(parseInt(h[j], 16));
-      }
-    }
-  }
-  return bytes;
-}
-
 Writer.prototype.writeString = function(v) {
   this.writeUvarint(v.length);
-  // this.offset was adjusted by writeUvarint above.
-  var utf8Bytes = utf8ToBytes(v);
-  this.ensureBuf(utf8Bytes.length);
-  this.buf.write(utf8Bytes, this.offset, utf8Bytes.length, 'binary');
-  this.offset += utf8Bytes.length;
+  var utf8Buf = new Buffer(v, 'utf8');
+  if (this.buf.length - this.offset >= utf8Buf.length) {
+    for (var i = 0; i < utf8Buf.length; i++) {
+      this.buf[this.offset+i] = utf8Buf[i];
+    }
+    this.offset += utf8Buf.length;
+  } else {
+    this.buf = Buffer.concat([this.buf, utf8Buf]);
+    this.offset += utf8Buf.length;
+  }
 }
 
 // https://github.com/feross/buffer/blob/master/index.js#L1127
@@ -148,4 +132,6 @@ function verifuint(value, max) {
 
 module.exports = {
   Writer: Writer,
+  uvarintSize: uvarintSize,
 };
+

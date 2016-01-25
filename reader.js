@@ -1,19 +1,18 @@
 var assert = require('assert');
-var buffer = require('buffer');
 
 /*
   Usage:
-  var buf = new buffer.Buffer(<some_hex_string>, 'hex');
+  var buf = new Buffer(<some_hex_string>, 'hex');
   var r = new Reader(buf);
   console.log(r.readUvarint());
   ...
 */
 
 var Reader = function(buf) {
-  if (buffer.Buffer.isBuffer(buf)) {
+  if (Buffer.isBuffer(buf)) {
     this.buf = buf;
   } else {
-    this.buf = new buffer.Buffer(buf);
+    this.buf = new Buffer(buf);
   }
   this.offset = 0;
 }

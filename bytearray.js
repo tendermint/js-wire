@@ -1,4 +1,3 @@
-var buffer = require('buffer');
 var Reader = require('./reader').Reader;
 var Writer = require('./writer').Writer;
 
@@ -9,7 +8,7 @@ Reader.prototype.readByteArray = function() {
     var b = this.readByte();
     buf[i] = b;
   }
-  return buf
+  return new Buffer(buf);
 }
 
 Writer.prototype.writeByteArray = function(v) {
