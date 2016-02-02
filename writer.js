@@ -20,7 +20,7 @@ Writer.prototype.getBuffer = function() {
 }
 
 Writer.prototype.ensureBuf = function(needBytes) {
-  if (this.buf.length <= this.offset + needBytes) {
+  if (this.buf.length < this.offset + needBytes) {
     var newBuf = new Buffer(this.buf.length + 1024);
     this.buf = Buffer.concat([this.buf, newBuf]);
   }
